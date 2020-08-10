@@ -3705,6 +3705,23 @@ void TFile::WriteStreamerInfo()
       }
    }
 
+   if (TestBit(kReproducible) && list.GetEntries()) {
+      // we want a fully reproducible order for the TStreamerInfo list so let's
+      // sort it. Sadly TStreamerInfo doesn't implement Compare() so let's use a
+      // temporary copy
+      TIter iter(list);
+      std::vector<TObject*> tmplist(iter.begin(), TIter::End());
+      std::sort(tmplist.begin(), tmplist.end(), [](TObject* a, TObject* b){
+         return ((TStreamerInfo*)a)->GetClass()->GetName() < ((TStreamerInfo*)b)->GetClass()->GetName()
+      });
+      list.Clear()
+      for(const auto* obj: tmplist) {
+         list.Add(obj);
+      }
+      //The list of rules are strings so we can easily sort them
+      listOfRules.Sort();
+   }
+
    // Write the StreamerInfo list even if it is empty.
    fClassIndex->fArray[0] = 2; //to prevent adding classes in TStreamerInfo::TagFile
 
